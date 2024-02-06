@@ -19,4 +19,6 @@ public interface AccountRepository extends CrudRepository<Account,Long> {
 
     @Query(value = "select * from account where phone = :identity or email = :identity",nativeQuery = true)
     Optional<Account> findByIdentity(@Param("identity") String identity);
+
+    Optional<Account> findByRiderId(String riderId);
 }

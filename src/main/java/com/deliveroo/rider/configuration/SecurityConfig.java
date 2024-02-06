@@ -4,6 +4,7 @@ import com.deliveroo.rider.component.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,14 +20,25 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                    .mvcMatchers("/auth","/account").permitAll()
-                    .anyRequest().authenticated()
+                    .mvcMatchers("/auth").permitAll()
+                    //create new account service
+                    .mvcMatchers(HttpMethod.PUT,"/account").permitAll()
+                    //update existing account service
+                    .mvcMatchers(HttpMethod.POST,"/account").permitAll()
+                    .mvcMatchers(HttpMethod.GET,"/account/*","/accounts").permitAll()
+                    //swagger config
+                    .antMatchers("/swagger**/**").permitAll()
+                    .antMatchers("/webjars/**").permitAll()
+                    .antMatchers("/v2/**").permitAll()
+                    .antMatchers("/doc.html").permitAll()
+                .anyRequest().authenticated()
                 .and()
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
@@ -38,7 +50,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    PasswordEncoder passwordEncoder(){
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 

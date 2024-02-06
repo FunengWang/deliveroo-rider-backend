@@ -93,10 +93,40 @@ public class FeeController {
         }
     }
 
+    @PutMapping("/feeBoosts")
+    public ResponseEntity<List<FeeBoost>> addFeeBoosts(@RequestBody List<FeeBoost> feeBoosts) {
+        Iterable<FeeBoost> iterable = repository.saveAll(feeBoosts);
+        if(iterable!=null){
+            Iterator<FeeBoost> iterator = iterable.iterator();
+            List<FeeBoost> list = new ArrayList<>();
+            while(iterator.hasNext()){
+                list.add(iterator.next());
+            }
+            return ResponseEntity.ok().body(list);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/feeBoost")
+    public ResponseEntity<String> updateFeeBoost(@RequestBody FeeBoost feeBoost) {
+        if(feeBoost.getId() == null){
+            return ResponseEntity.badRequest().body("Update operation should provide Id!");
+        } else {
+            Optional<FeeBoost> optional = repository.findById(feeBoost.getId());
+            if(optional.isPresent()){
+                FeeBoost newFeeBoost = repository.save(optional.get());
+                return ResponseEntity.ok().body("Update FeeBoost Operation Completed.");
+            }else {
+                return ResponseEntity.badRequest().body("Can't find feeBoost with provided Id!");
+            }
+        }
+    }
+
     @GetMapping("/feeBoost/{id}")
-    public ResponseEntity<FeeBoost> getFeeBoost(@PathVariable("id") Long id) {
-        Optional<FeeBoost> feeBoost = repository.findById(id);
-        return feeBoost.map(boost -> ResponseEntity.ok().body(boost)).orElseGet(() -> ResponseEntity.badRequest().build());
+    public ResponseEntity<FeeBoost> searchFeeBoost(@PathVariable("id") Long id){
+        Optional<FeeBoost> optional = repository.findById(id);
+        return optional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     @DeleteMapping("/feeBoost/{id}")
@@ -107,43 +137,6 @@ public class FeeController {
             return ResponseEntity.ok().body("FeeBoost deleted");
         }else {
             return ResponseEntity.badRequest().body("FeeBoost doesn't exist!");
-        }
-    }
-
-    @DeleteMapping("/feeBoosts")
-    public ResponseEntity<String> deleteFeeBoosts(){
-        long count = repository.count();
-        if(count>0){
-            repository.deleteAll();
-            return ResponseEntity.ok().body("Deleted All!");
-        }else {
-            return ResponseEntity.badRequest().body("No Data exists!");
-        }
-
-    }
-
-    @PutMapping("/feeBoost")
-    public ResponseEntity<FeeBoost> addFeeBoost(@RequestBody FeeBoost feeBoost) {
-        FeeBoost saved = repository.save(feeBoost);
-        if(saved!=null){
-            return ResponseEntity.ok().body(saved);
-        }else {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/feeBoosts")
-    public ResponseEntity<List<FeeBoost>> addFeeBoost(@RequestBody List<FeeBoost> feeBoosts) {
-        Iterable<FeeBoost> iterable = repository.saveAll(feeBoosts);
-        if(iterable!=null){
-            Iterator<FeeBoost> iterator = iterable.iterator();
-            List<FeeBoost> list = new ArrayList<>();
-            while(iterator.hasNext()){
-                list.add(iterator.next());
-            }
-            return ResponseEntity.ok().body(list);
-        }else {
-            return ResponseEntity.badRequest().build();
         }
     }
 }
