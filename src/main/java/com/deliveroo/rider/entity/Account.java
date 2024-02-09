@@ -22,6 +22,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Table(
+        name = "rider_account",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"firstName","lastname"})}
+)
 @Data
 @ToString
 @ApiModel(value = "Rider Account Object",description = "Rider Account Object")
@@ -31,11 +35,11 @@ public class Account implements Serializable {
     @ApiModelProperty(hidden = true)
     private Long id;
 
-    @Column(nullable = false, length = 15, unique = true)
+    @Column(nullable = false, length = 15)
     @ApiModelProperty(required = true,example = "Funeng")
     private String firstName;
 
-    @Column(nullable = false, length = 15, unique = true)
+    @Column(nullable = false, length = 15)
     @ApiModelProperty(required = true,example = "Wang")
     private String lastname;
 

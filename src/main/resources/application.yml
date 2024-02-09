@@ -7,7 +7,8 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: org.gjt.mm.mysql.Driver
-    url: "jdbc:mysql://localhost:3306/riderdb?useUnicode=true&characterEncoding=utf-8&useSSL=false"
+    #该服务位于弗吉尼亚州，如果感觉连接很慢，打开VPN
+    url: "jdbc:mysql://ec2-54-211-145-203.compute-1.amazonaws.com:3306/rider_db?useUnicode=true&characterEncoding=utf-8&useSSL=false"
     username: "root"
     password: "root"
   mvc:
