@@ -1,10 +1,12 @@
 package com.deliveroo.rider.util;
 
 import com.deliveroo.rider.entity.Account;
+import com.deliveroo.rider.service.RedisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
@@ -17,6 +19,9 @@ import java.util.UUID;
 public class JwtUtil {
     private static final SecretKey SECRETKEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     public static Map<String, String> TOKEN_MAP = new HashMap<>();
+
+    @Autowired
+    private RedisService redisService;
 
     public static String generateToken(Account account) {
         String riderId = account.getRiderId();
