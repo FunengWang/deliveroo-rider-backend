@@ -1,15 +1,18 @@
 package com.deliveroo.rider.controller;
 
+import com.deliveroo.rider.configuration.JwtTokenProvider;
 import com.deliveroo.rider.entity.Activity;
 import com.deliveroo.rider.entity.Order;
 import com.deliveroo.rider.pojo.Month;
 import com.deliveroo.rider.pojo.dto.*;
 import com.deliveroo.rider.repository.ActivityRepository;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalTime;
@@ -24,13 +27,20 @@ import static com.deliveroo.rider.util.Utils.*;
 public class ActivityController {
     @Autowired
     private ActivityRepository repository;
+    
+    @Autowired
+    private JwtTokenProvider tokenProvider;
+
+    public static final String TOKEN_HEADER = "Token";
 
     @GetMapping("/activities/{startYear}/{startMonth}/months/{months}")
     public ResponseEntity<List<MonthlyActivitySummary>> monthlyActivities(
             @PathVariable("startYear") int year,
             @PathVariable("startMonth") Month startMonth,
-            @PathVariable("months") int length) {
+            @PathVariable("months") int length,
+            @RequestHeader(TOKEN_HEADER) String token) {
         List<MonthlyActivitySummary> list = new ArrayList<>();
+        Long accountId = getAccountId(token);
         for (int i = 0; i < length; i++) {
             Month[] months = Month.values();
             int index = startMonth.ordinal() - i;
@@ -41,7 +51,7 @@ public class ActivityController {
                 index = 12 + index;
             }
             Month month = months[index];
-            List<Activity> monthlyActivities = repository.findByDateInYearAndMonth(year, month.ordinal() + 1);
+            List<Activity> monthlyActivities = repository.findByDateInYearAndMonth(year, month.ordinal() + 1,accountId);
             int orders = calculateTotalOrders(monthlyActivities);
             double earnings = calculateTotalEarnings(monthlyActivities);
             list.add(new MonthlyActivitySummary(month.getAbbreviation(), orders, earnings));
@@ -50,9 +60,11 @@ public class ActivityController {
     }
 
     @GetMapping("/activities/{year}/{month}")
-    public ResponseEntity<MonthlyActivity> monthlyActivity(@PathVariable("year") int year
-            , @PathVariable("month") Month month) {
-        List<Activity> monthlyActivities = repository.findByDateInYearAndMonth(year, month.ordinal() + 1);
+    public ResponseEntity<MonthlyActivity> monthlyActivity(@PathVariable("year") int year,
+                                                           @PathVariable("month") Month month,
+                                                           @RequestHeader(TOKEN_HEADER) String token) {
+        Long accountId = getAccountId(token);
+        List<Activity> monthlyActivities = repository.findByDateInYearAndMonth(year, month.ordinal() + 1,accountId);
         double monthlyEarnings = calculateTotalEarnings(monthlyActivities);
         int monthlyOrders = calculateTotalOrders(monthlyActivities);
         int activityDays = calculateActivityDays(monthlyActivities);
@@ -92,8 +104,10 @@ public class ActivityController {
     @GetMapping("/activities/from/{fromDate}/to/{toDate}")
     public ResponseEntity<WeeklyActivity> dayActivities(
             @PathVariable("fromDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date from,
-            @PathVariable("toDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date to) {
-        List<Activity> activities = repository.findDataInDateRange(from, to);
+            @PathVariable("toDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date to,
+            @RequestHeader(TOKEN_HEADER) String token) {
+        Long accountId = getAccountId(token);
+        List<Activity> activities = repository.findDataInDateRange(from, to,accountId);
 
         int orders = calculateTotalOrders(activities);
         double weeklyEarnings = calculateTotalEarnings(activities);
@@ -114,14 +128,16 @@ public class ActivityController {
     @GetMapping("/activities/{date}/weeks/{weeks}")
     public ResponseEntity<List<WeeklyActivitySummary>> weeklyActivities(
             @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
-            @PathVariable("weeks") int length) {
+            @PathVariable("weeks") int length,
+            @RequestHeader(TOKEN_HEADER) String token) {
+        Long accountId = getAccountId(token);
         List<DateRange> dateRanges = calculateDateRanges(date, length);
 
         List<WeeklyActivitySummary> weeklyActivities = new ArrayList<>();
         for (DateRange range : dateRanges) {
             Date end = range.getEnd();
             Date start = range.getStart();
-            List<Activity> activities = repository.findDataInDateRange(start, end);
+            List<Activity> activities = repository.findDataInDateRange(start, end,accountId);
             int orders = calculateTotalOrders(activities);
             double weeklyEarnings = calculateTotalEarnings(activities);
             WeeklyActivitySummary weeklyActivitySummary = new WeeklyActivitySummary(orders, weeklyEarnings);
@@ -130,5 +146,10 @@ public class ActivityController {
             weeklyActivities.add(weeklyActivitySummary);
         }
         return ResponseEntity.ok().body(weeklyActivities);
+    }
+    
+    private Long getAccountId(String token){
+        Claims claims = tokenProvider.parseToken(token);
+        return Long.parseLong(claims.get("accountId",String.class));
     }
 }

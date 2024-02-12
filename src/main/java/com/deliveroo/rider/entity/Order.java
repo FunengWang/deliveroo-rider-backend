@@ -28,7 +28,7 @@ public class Order {
     @Column(nullable = false,length = 20)
     private String shop;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id")
     private List<OrderDetail> orderDetails;
 }

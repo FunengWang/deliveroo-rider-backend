@@ -3,7 +3,7 @@ package com.deliveroo.rider.controller;
 import com.deliveroo.rider.entity.Account;
 import com.deliveroo.rider.pojo.dto.CustomUserDetails;
 import com.deliveroo.rider.pojo.dto.LoginRequest;
-import com.deliveroo.rider.util.JwtUtil;
+import com.deliveroo.rider.configuration.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +20,9 @@ public class AuthController {
     @Autowired
     AuthenticationManager authenticationManager;
 
+    @Autowired
+    JwtTokenProvider tokenProvider;
+
     @PostMapping("/auth")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -29,7 +32,7 @@ public class AuthController {
             Object principal = authenticate.getPrincipal();
             CustomUserDetails customUserDetails = (CustomUserDetails) principal;
             Account account = customUserDetails.getAccount();
-            String token = JwtUtil.generateToken(account);
+            String token = tokenProvider.generateToken(account);
             return ResponseEntity.ok(token);
         }catch (Exception e){
             if(e instanceof AccountExpiredException){

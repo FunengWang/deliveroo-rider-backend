@@ -1,14 +1,13 @@
 package com.deliveroo.rider.service;
 
-import com.deliveroo.rider.component.CustomProperties;
 import com.deliveroo.rider.controller.ActivityController;
 import com.deliveroo.rider.entity.*;
 import com.deliveroo.rider.pojo.DayOfWeek;
 import com.deliveroo.rider.pojo.WorkingType;
 import com.deliveroo.rider.repository.ActivityRepository;
 import com.deliveroo.rider.repository.FeeBoostRepository;
-import org.hibernate.jdbc.Work;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.deliveroo.rider.util.Utils.*;
@@ -16,6 +15,7 @@ import static com.deliveroo.rider.util.Utils.*;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.deliveroo.rider.util.Utils.mapToDayOfWeek;
 
@@ -28,7 +28,10 @@ public class ActivityService {
     private FeeBoostRepository feeBoostRepository;
 
     @Autowired
-    private CustomProperties customProperties;
+    private RedisTemplate<String,Object> redisTemplate;
+
+    private static final String PLACES_KEY = "places";
+    private static final String SHOPS_KEY = "shops";
 
     private static volatile List<FeeBoost> FEEBOOSTLIST;
 
@@ -199,13 +202,19 @@ public class ActivityService {
     }
 
     private String randomShop() {
-        List<String> shops = customProperties.getShops();
+        List<String> shops = redisTemplate.opsForList().range(SHOPS_KEY, 0, -1)
+                .stream()
+                .map(ele->ele.toString())
+                .collect(Collectors.toList());
         int index = new Random().nextInt(shops.size());
         return shops.get(index);
     }
 
     private String randomPlace() {
-        List<String> places = customProperties.getPlaces();
+        List<String> places = redisTemplate.opsForList().range(PLACES_KEY, 0, -1)
+                .stream()
+                .map(ele->ele.toString())
+                .collect(Collectors.toList());
         int index = new Random().nextInt(places.size());
         return places.get(index);
     }

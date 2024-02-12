@@ -2,7 +2,7 @@ package com.deliveroo.rider.component;
 
 import com.deliveroo.rider.entity.Account;
 import com.deliveroo.rider.pojo.dto.CustomUserDetails;
-import com.deliveroo.rider.util.JwtUtil;
+import com.deliveroo.rider.configuration.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +26,9 @@ public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private JwtTokenProvider tokenProvider;
+
     public static final String TOKEN_HEADER = "Token";
 
     @Override
@@ -37,7 +40,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         try {
-            Claims claims = JwtUtil.parseToken(token);
+            Claims claims = tokenProvider.parseToken(token);
             String email = claims.get("email", String.class);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             if (userDetails instanceof CustomUserDetails) {

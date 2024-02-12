@@ -1,50 +1,58 @@
-package com.deliveroo.rider.util;
+package com.deliveroo.rider.configuration;
 
 import com.deliveroo.rider.entity.Account;
-import com.deliveroo.rider.service.RedisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-public class JwtUtil {
+@Component
+public class JwtTokenProvider {
     private static final SecretKey SECRETKEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-    public static Map<String, String> TOKEN_MAP = new HashMap<>();
-
     @Autowired
-    private RedisService redisService;
+    private RedisTemplate<String,Object> redisTemplate;
 
-    public static String generateToken(Account account) {
+    public String generateToken(Account account) {
+        String accountId = account.getId().toString();
         String riderId = account.getRiderId();
-        if (TOKEN_MAP.containsKey(riderId)) {
-            return TOKEN_MAP.get(riderId);
+        RedisConnection connection = Objects.requireNonNull(redisTemplate.getConnectionFactory()).getConnection();
+        if (Boolean.TRUE.equals(connection.exists(riderId.getBytes()))) {
+            return (String) redisTemplate.opsForValue().get(riderId);
         } else {
             String token = Jwts.builder()
                     .setId(UUID.randomUUID().toString())
                     .setSubject("Subject")
                     .setIssuer("Issuer")
                     .setAudience("Audience")
-                    .claim("riderId", riderId)
+                    .claim("accountId", accountId)
                     .claim("email", account.getEmail())
                     .setIssuedAt(issuedDate())
                     .setExpiration(expirationDate(account.getExpirationDate()))
                     .signWith(SECRETKEY)
                     .compact();
-            TOKEN_MAP.put(riderId, token);
+            long timeout = calculateTimeout(LocalDateTime.now(),account.getExpirationDate());
+            redisTemplate.opsForValue().set(riderId,token,timeout, TimeUnit.SECONDS);
             return token;
         }
     }
 
-    public static Claims parseToken(String token) {
+    private long calculateTimeout(LocalDateTime from,LocalDateTime to){
+        return Duration.between(from,to).getSeconds();
+    }
+
+
+    public Claims parseToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRETKEY)
                 .build()
@@ -53,23 +61,19 @@ public class JwtUtil {
 
     }
 
-    private static Date issuedDate() {
+    private  Date issuedDate() {
         return Date.from(LocalDateTime.now()
                 .atZone(systemDefaultZone())
                 .toInstant());
     }
 
-    private static Date expirationDate(LocalDateTime expirationDate) {
+    private  Date expirationDate(LocalDateTime expirationDate) {
         return Date.from(expirationDate
                 .atZone(systemDefaultZone())
                 .toInstant());
     }
 
-    private static ZoneId systemDefaultZone() {
+    private ZoneId systemDefaultZone() {
         return ZoneId.systemDefault();
-    }
-
-    private static void clearExpiredToken(String token) {
-        TOKEN_MAP.entrySet().removeIf(entry -> entry.getValue().equals(token));
     }
 }

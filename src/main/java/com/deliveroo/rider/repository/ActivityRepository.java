@@ -11,27 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ActivityRepository extends CrudRepository<Activity, Long> {
-    @Override
-    <S extends Activity> S save(S entity);
+    @Query(value = "SELECT * FROM activity  WHERE YEAR(date) = :year and MONTH(date) = :month and account_id = :accountId",nativeQuery = true)
+    List<Activity> findByDateInYearAndMonth(@Param("year") int year, @Param("month") int month, @Param("accountId") long accountId);
 
-    @Override
-    <S extends Activity> Iterable<S> saveAll(Iterable<S> entities);
-
-    @Override
-    Iterable<Activity> findAllById(Iterable<Long> longs);
-
-    @Override
-    Optional<Activity> findById(Long id);
-
-    @Override
-    void deleteById(Long aLong);
-
-    @Override
-    void deleteAll();
-
-    @Query(value = "SELECT * FROM activity WHERE YEAR(date) = :year and MONTH(date) = :month",nativeQuery = true)
-    List<Activity> findByDateInYearAndMonth(@Param("year") int year, @Param("month") int month);
-
-    @Query(value = "SELECT * FROM activity WHERE date BETWEEN :from AND :to", nativeQuery = true)
-    List<Activity> findDataInDateRange(@Param("from") Date from,@Param("to") Date to);
+    @Query(value = "SELECT a.* FROM activity a inner join delivery_order o on o.activity_id = a.id WHERE a.date BETWEEN :from AND :to and a.account_id = :accountId", nativeQuery = true)
+    List<Activity> findDataInDateRange(@Param("from") Date from,@Param("to") Date to, @Param("accountId") long accountId);
 }

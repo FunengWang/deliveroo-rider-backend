@@ -21,14 +21,11 @@ spring:
   redis:
     host: ec2-3-88-85-162.compute-1.amazonaws.com
     port: 6379
-
-custom:
-  places:
-    - GAL
-    - SHT
-  shops:
-    - Supermac's
-    - McDonald's
-    - Subway
-    - Burger King
-    - Papa John's
+#    database: 0
+    timeout: 3000 #最大等待时间，3000ms,超时抛出异常，否则请求一直等待
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 1
+        max-wait: -1

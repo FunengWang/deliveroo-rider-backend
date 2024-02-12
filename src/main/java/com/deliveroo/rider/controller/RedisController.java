@@ -1,7 +1,7 @@
 package com.deliveroo.rider.controller;
 
-import com.deliveroo.rider.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,11 +11,11 @@ import java.util.Map;
 public class RedisController {
 
     @Autowired
-    private RedisService redisService;
+    private RedisTemplate<String,Object> redisTemplate;
 
     @GetMapping("/redis/{key}")
     public ResponseEntity<Object> get(@PathVariable("key") String key){
-        Object value = redisService.getValue(key);
+        Object value = redisTemplate.opsForValue().get(key);
         return ResponseEntity.ok().body(value);
     }
 
@@ -26,7 +26,7 @@ public class RedisController {
         }else {
             String key = (String) pair.get("key");
             Object value = pair.get("value");
-            redisService.setValue(key,value);
+            redisTemplate.opsForValue().set(key,value);
             return ResponseEntity.ok().body("Set key value succeed.");
         }
     }
