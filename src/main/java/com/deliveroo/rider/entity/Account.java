@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -31,7 +30,7 @@ import java.util.List;
 @ApiModel(value = "Rider Account Object",description = "Rider Account Object")
 public class Account implements Serializable {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(hidden = true)
     private Long id;
 
@@ -43,7 +42,7 @@ public class Account implements Serializable {
     @ApiModelProperty(required = true,example = "Wang")
     private String lastname;
 
-    @Column(nullable = false, length = 30, unique = true)
+    @Column(nullable = false, length = 30)
     @ApiModelProperty(required = true,example = "838761234")
     private String phone;
 
@@ -81,7 +80,6 @@ public class Account implements Serializable {
     private WorkingType workingType = WorkingType.NORMAL;
 
     @Column(nullable = false, length = 10, unique = true)
-    @Length(min = 6, max = 6)
     @ApiModelProperty(required = true,example = "823487",notes = "6 digit string")
     private String riderId;
 

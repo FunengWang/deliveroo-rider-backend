@@ -1,12 +1,12 @@
 package com.deliveroo.rider.controller;
 
-import com.deliveroo.rider.configuration.JwtTokenProvider;
+import com.deliveroo.rider.entity.Account;
 import com.deliveroo.rider.entity.Activity;
 import com.deliveroo.rider.entity.Order;
 import com.deliveroo.rider.pojo.Month;
 import com.deliveroo.rider.pojo.dto.*;
 import com.deliveroo.rider.repository.ActivityRepository;
-import io.jsonwebtoken.Claims;
+import com.deliveroo.rider.service.ActivityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -15,21 +15,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.deliveroo.rider.util.Utils.*;
 
 @RestController
 public class ActivityController {
     @Autowired
-    private ActivityRepository repository;
-    
+    private ActivityRepository activityRepository;
+
     @Autowired
-    private JwtTokenProvider tokenProvider;
+    private ActivityService activityService;
 
     public static final String TOKEN_HEADER = "Token";
 
@@ -40,7 +39,8 @@ public class ActivityController {
             @PathVariable("months") int length,
             @RequestHeader(TOKEN_HEADER) String token) {
         List<MonthlyActivitySummary> list = new ArrayList<>();
-        Long accountId = getAccountId(token);
+        Account account = activityService.getAccountByToken(token);
+        List<Activity> allActivities = activityRepository.findByAccount(account);
         for (int i = 0; i < length; i++) {
             Month[] months = Month.values();
             int index = startMonth.ordinal() - i;
@@ -51,7 +51,12 @@ public class ActivityController {
                 index = 12 + index;
             }
             Month month = months[index];
-            List<Activity> monthlyActivities = repository.findByDateInYearAndMonth(year, month.ordinal() + 1,accountId);
+            int finalYear = year;
+            List<Activity> monthlyActivities = allActivities.stream()
+                    .filter(activity->
+                            activity.getDate().getYear() == finalYear &&
+                                    activity.getDate().getMonthValue() == month.ordinal()+1)
+                    .collect(Collectors.toList());
             int orders = calculateTotalOrders(monthlyActivities);
             double earnings = calculateTotalEarnings(monthlyActivities);
             list.add(new MonthlyActivitySummary(month.getAbbreviation(), orders, earnings));
@@ -63,8 +68,8 @@ public class ActivityController {
     public ResponseEntity<MonthlyActivity> monthlyActivity(@PathVariable("year") int year,
                                                            @PathVariable("month") Month month,
                                                            @RequestHeader(TOKEN_HEADER) String token) {
-        Long accountId = getAccountId(token);
-        List<Activity> monthlyActivities = repository.findByDateInYearAndMonth(year, month.ordinal() + 1,accountId);
+        Account account = activityService.getAccountByToken(token);
+        List<Activity> monthlyActivities = activityService.getActivities(account,year,month);
         double monthlyEarnings = calculateTotalEarnings(monthlyActivities);
         int monthlyOrders = calculateTotalOrders(monthlyActivities);
         int activityDays = calculateActivityDays(monthlyActivities);
@@ -75,7 +80,7 @@ public class ActivityController {
 
     @GetMapping("/activity/{id}")
     public ResponseEntity<DailyActivity> dailyActivity(@PathVariable("id") Long id) {
-        Optional<Activity> optional = repository.findById(id);
+        Optional<Activity> optional = activityRepository.findById(id);
         if (optional.isPresent()) {
             Activity activity = optional.get();
             int dailyOrders = calculateTotalOrders(activity);
@@ -103,12 +108,11 @@ public class ActivityController {
 
     @GetMapping("/activities/from/{fromDate}/to/{toDate}")
     public ResponseEntity<WeeklyActivity> dayActivities(
-            @PathVariable("fromDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date from,
-            @PathVariable("toDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date to,
+            @PathVariable("fromDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate from,
+            @PathVariable("toDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate to,
             @RequestHeader(TOKEN_HEADER) String token) {
-        Long accountId = getAccountId(token);
-        List<Activity> activities = repository.findDataInDateRange(from, to,accountId);
-
+        Account account = activityService.getAccountByToken(token);
+        List<Activity> activities = activityService.getActivities(account,from,to);
         int orders = calculateTotalOrders(activities);
         double weeklyEarnings = calculateTotalEarnings(activities);
         int activityDays = calculateActivityDays(activities);
@@ -127,17 +131,24 @@ public class ActivityController {
 
     @GetMapping("/activities/{date}/weeks/{weeks}")
     public ResponseEntity<List<WeeklyActivitySummary>> weeklyActivities(
-            @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
+            @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @PathVariable("weeks") int length,
             @RequestHeader(TOKEN_HEADER) String token) {
-        Long accountId = getAccountId(token);
+        Account account = activityService.getAccountByToken(token);
+        List<Activity> allActivities = activityRepository.findByAccount(account);
         List<DateRange> dateRanges = calculateDateRanges(date, length);
 
         List<WeeklyActivitySummary> weeklyActivities = new ArrayList<>();
         for (DateRange range : dateRanges) {
-            Date end = range.getEnd();
-            Date start = range.getStart();
-            List<Activity> activities = repository.findDataInDateRange(start, end,accountId);
+            LocalDate end = range.getEnd();
+            LocalDate start = range.getStart();
+            List<Activity> activities = allActivities
+                    .stream()
+                    .filter(activity ->
+                            (activity.getDate().isAfter(start)&& activity.getDate().isBefore(end)) ||
+                            activity.getDate().isEqual(start) ||
+                            activity.getDate().isEqual(end))
+                    .collect(Collectors.toList());
             int orders = calculateTotalOrders(activities);
             double weeklyEarnings = calculateTotalEarnings(activities);
             WeeklyActivitySummary weeklyActivitySummary = new WeeklyActivitySummary(orders, weeklyEarnings);
@@ -146,10 +157,5 @@ public class ActivityController {
             weeklyActivities.add(weeklyActivitySummary);
         }
         return ResponseEntity.ok().body(weeklyActivities);
-    }
-    
-    private Long getAccountId(String token){
-        Claims claims = tokenProvider.parseToken(token);
-        return Long.parseLong(claims.get("accountId",String.class));
     }
 }

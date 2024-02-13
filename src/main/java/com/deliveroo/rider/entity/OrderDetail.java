@@ -10,7 +10,7 @@ import java.time.LocalTime;
 @Data
 public class OrderDetail {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false,length = 5)
@@ -23,4 +23,8 @@ public class OrderDetail {
     @Column(nullable = false)
     @JsonFormat(pattern = "HH:mm",locale = "en")
     private LocalTime complete;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
 }

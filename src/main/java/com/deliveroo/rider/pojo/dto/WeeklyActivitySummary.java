@@ -25,14 +25,6 @@ public class WeeklyActivitySummary {
     @JsonProperty("earnings")
     private double weeklyEarnings;
 
-    public void setStart(Date start) {
-        this.start =  start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    }
-
-    public void setComplete(Date complete) {
-        this.complete =  complete.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    }
-
     public WeeklyActivitySummary(int orders, double weeklyEarnings){
         this.orders = orders;
         this.weeklyEarnings =  weeklyEarnings;

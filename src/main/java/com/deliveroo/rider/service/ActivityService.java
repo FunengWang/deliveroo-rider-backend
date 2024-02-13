@@ -1,39 +1,48 @@
 package com.deliveroo.rider.service;
 
-import com.deliveroo.rider.controller.ActivityController;
+import com.deliveroo.rider.configuration.JwtTokenProvider;
 import com.deliveroo.rider.entity.*;
 import com.deliveroo.rider.pojo.DayOfWeek;
+import com.deliveroo.rider.pojo.Month;
 import com.deliveroo.rider.pojo.WorkingType;
+import com.deliveroo.rider.repository.AccountRepository;
 import com.deliveroo.rider.repository.ActivityRepository;
-import com.deliveroo.rider.repository.FeeBoostRepository;
+import com.deliveroo.rider.repository.OrderDetailRepository;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 import static com.deliveroo.rider.util.Utils.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.deliveroo.rider.util.Utils.mapToDayOfWeek;
+import static com.deliveroo.rider.util.Constants.*;
 
 @Service
 public class ActivityService {
     @Autowired
-    private ActivityRepository repository;
+    private ActivityRepository activityRepository;
 
     @Autowired
-    private FeeBoostRepository feeBoostRepository;
+    private AccountRepository accountRepository;
 
     @Autowired
     private RedisTemplate<String,Object> redisTemplate;
 
-    private static final String PLACES_KEY = "places";
-    private static final String SHOPS_KEY = "shops";
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
 
-    private static volatile List<FeeBoost> FEEBOOSTLIST;
+    @Autowired
+    private JwtTokenProvider tokenProvider;
 
     /**
      * the default working type is normal, default months is 6 months
@@ -42,19 +51,18 @@ public class ActivityService {
      * easy working type, work from monday to Friday, be off at weekends, 5 orders in average per day,
      *
      */
-    @Transactional
-    public void generateMockedActivity(Account account, Integer months) {
+    public List<Activity> generateMockedActivities(Account account, Integer months) {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MONTH, -months);
         Calendar now = Calendar.getInstance();
-        ArrayList<Activity> bufferActivities = new ArrayList<>();
+        ArrayList<Activity> randomActivities = new ArrayList<>();
         WorkingType workingType = account.getWorkingType();
         while (true) {
             switch (calendar.get(Calendar.DAY_OF_WEEK)) {
                 case 1:
                     //sunday
                     if (workingType == WorkingType.BUSY) {
-                        bufferActivities.add(randomActivity(calendar, account));
+                        randomActivities.add(randomActivity(calendar, account));
                     }
                     break;
                 case 2:
@@ -62,72 +70,91 @@ public class ActivityService {
                 case 4:
                 case 5:
                 case 6:
-                    bufferActivities.add(randomActivity(calendar, account));
+                    randomActivities.add(randomActivity(calendar, account));
                     break;
                 case 7:
                     //Saturday
                     if (workingType == WorkingType.BUSY || workingType == WorkingType.NORMAL) {
-                        bufferActivities.add(randomActivity(calendar, account));
+                        randomActivities.add(randomActivity(calendar, account));
                     }
                     break;
-            }
-            if (bufferActivities.size() == 20) {
-                repository.saveAll(bufferActivities);
-                bufferActivities.clear();
             }
             calendar.add(Calendar.DAY_OF_MONTH, 1);
             if (calendar.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
                     calendar.get(Calendar.MONTH) == now.get(Calendar.MONTH) &&
                     calendar.get(Calendar.DAY_OF_MONTH) == now.get(Calendar.DAY_OF_MONTH)) {
-                repository.saveAll(bufferActivities);
-                bufferActivities.clear();
                 break;
             }
         }
+        return randomActivities;
     }
 
+    public List<Activity> getActivities(Account account, LocalDate from, LocalDate to){
+        return activityRepository.findByAccount(account)
+                .stream()
+                .filter(activity ->
+                        (activity.getDate().isBefore(to) && activity.getDate().isAfter(from)) ||
+                                activity.getDate().isEqual(to) ||
+                                activity.getDate().isEqual(from))
+                .collect(Collectors.toList());
+    }
+
+    public List<Activity> getActivities(Account account, int year, Month month) {
+        return activityRepository.findByAccount(account).stream()
+                .filter(activity->
+                        activity.getDate().getYear() == year &&
+                                activity.getDate().getMonthValue() == month.ordinal()+1)
+                .collect(Collectors.toList());
+    }
+
+    public Account getAccountByToken (String token){
+        Claims claims = tokenProvider.parseToken(token);
+        Long accountId =  Long.parseLong(claims.get("accountId",String.class));
+        Optional<Account> optionalAccount = accountRepository.findById(accountId);
+        return optionalAccount.orElse(null);
+    }
     private Activity randomActivity(Calendar calendar, Account account) {
         Activity activity = new Activity();
-        activity.setDate(calendar.getTime());
+        ZonedDateTime zonedDateTime = calendar.toInstant().atZone(ZoneId.systemDefault());
+        activity.setDate(zonedDateTime.toLocalDate());
         activity.setAccount(account);
         DayOfWeek dayOfWeek = mapToDayOfWeek(calendar);
         WorkingType workingType = account.getWorkingType();
         switch (workingType) {
             case BUSY:
-                activity.setOrders(randomOrders(15, dayOfWeek));
+                activity.setOrders(randomOrders(15, dayOfWeek, activity));
             case NORMAL:
-                activity.setOrders(randomOrders(10, dayOfWeek));
+                activity.setOrders(randomOrders(10, dayOfWeek, activity));
             case EASY:
-                activity.setOrders(randomOrders(5, dayOfWeek));
-
+                activity.setOrders(randomOrders(5, dayOfWeek, activity));
         }
         return activity;
     }
 
-    private List<Order> randomOrders(int maxOrders, DayOfWeek dayOfWeek) {
+    private List<Order> randomOrders(int maxOrders, DayOfWeek dayOfWeek, Activity activity) {
         List<Order> orders = new ArrayList<>();
         for (int i = 1; i <= maxOrders; i++) {
-            orders.add(randomOrder(dayOfWeek));
+            orders.add(randomOrder(dayOfWeek,activity));
         }
         return orders;
     }
 
-    private Order randomOrder(DayOfWeek dayOfWeek) {
+    private Order randomOrder(DayOfWeek dayOfWeek, Activity activity) {
         Order order = new Order();
         order.setFee(randomFee(dayOfWeek));
-        order.setOrderDetails(randomOrderDetails());
+        order.setOrderDetails(randomOrderDetails(order));
         order.setTip(randomTip(1, 5));
         order.setShop(randomShop());
         order.setPlace(randomPlace());
         order.setExtra(randomExtra(dayOfWeek, order));
+        order.setActivity(activity);
         return order;
     }
 
     private Double randomExtra(DayOfWeek dayOfWeek, Order order) {
-        if (FEEBOOSTLIST == null) {
-            searchFeeBoostList();
-        }
-        Optional<FeeBoost> optional = FEEBOOSTLIST.stream()
+        BoundSetOperations<String, Object> set = redisTemplate.boundSetOps(FEE_BOOSTS_KEY);
+        List<FeeBoost> feeBoostList = convertToFeeBoosts(set.members());
+        Optional<FeeBoost> optional = feeBoostList.stream()
                 .filter(item -> item.getDayOfWeek() == dayOfWeek)
                 .findFirst();
         if (optional.isPresent()) {
@@ -159,20 +186,22 @@ public class ActivityService {
         return formatDouble(random);
     }
 
-    private List<OrderDetail> randomOrderDetails() {
+    private List<OrderDetail> randomOrderDetails(Order order) {
         List<OrderDetail> orderDetails = new ArrayList<>();
-        OrderDetail orderDetail = randomOrderDetail();
+        OrderDetail orderDetail = randomOrderDetail(order);
+        orderDetail.setOrder(order);
         orderDetails.add(orderDetail);
         Random random = new Random();
         if (random.nextInt(10) > 8.5) {
-            orderDetails.add(randomOrderDetail(orderDetail.getStart(), orderDetail.getComplete()));
+            orderDetails.add(randomOrderDetail(orderDetail.getStart(), orderDetail.getComplete(), order));
         }
         return orderDetails;
     }
 
-    private OrderDetail randomOrderDetail() {
+    private OrderDetail randomOrderDetail(Order order) {
         OrderDetail orderDetail = new OrderDetail();
         orderDetail.setOrderNo(randomOrderNo());
+        orderDetail.setOrder(order);
         int startHour = randomStartHour();
         int startMinute = randomStartMinute();
         int minutes = randomTimeElapsed(5, 45);
@@ -181,12 +210,13 @@ public class ActivityService {
         return orderDetail;
     }
 
-    private OrderDetail randomOrderDetail(LocalTime start, LocalTime complete) {
+    private OrderDetail randomOrderDetail(LocalTime start, LocalTime complete, Order order) {
         OrderDetail orderDetail = new OrderDetail();
         orderDetail.setOrderNo(randomOrderNo());
         int minutes = randomTimeElapsed(5, 15);
         orderDetail.setStart(start);
         orderDetail.setComplete(calculateCompleteTime(complete.getHour(), complete.getMinute() + minutes));
+        orderDetail.setOrder(order);
         return orderDetail;
     }
 
@@ -247,20 +277,6 @@ public class ActivityService {
 
     private LocalTime calculateStartTime(int hour, int minute) {
         return LocalTime.of(hour, minute);
-    }
-
-    private void searchFeeBoostList() {
-        if (FEEBOOSTLIST == null) {
-            synchronized (ActivityController.class) {
-                if (FEEBOOSTLIST == null) {
-                    Iterable<FeeBoost> feeBoosts = feeBoostRepository.findAll();
-                    FEEBOOSTLIST = new ArrayList<>();
-                    for (FeeBoost next : feeBoosts) {
-                        FEEBOOSTLIST.add(next);
-                    }
-                }
-            }
-        }
     }
 
     private boolean ifInExtraPeriod(FeeBoost feeBoost, List<OrderDetail> orderDetails) {

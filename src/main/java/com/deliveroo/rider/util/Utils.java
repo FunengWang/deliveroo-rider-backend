@@ -1,6 +1,8 @@
 package com.deliveroo.rider.util;
 
+import com.alibaba.fastjson.JSON;
 import com.deliveroo.rider.entity.Activity;
+import com.deliveroo.rider.entity.FeeBoost;
 import com.deliveroo.rider.entity.Order;
 import com.deliveroo.rider.entity.OrderDetail;
 import com.deliveroo.rider.pojo.DayOfWeek;
@@ -9,8 +11,12 @@ import com.deliveroo.rider.pojo.dto.DateRange;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Utils {
     public static DayOfWeek mapToDayOfWeek(Calendar calendar) {
@@ -115,10 +121,10 @@ public class Utils {
         return activities.size();
     }
 
-    public static List<DateRange> calculateDateRanges(Date origin, int length) {
+    public static List<DateRange> calculateDateRanges(LocalDate origin, int length) {
         List<DateRange> dateRanges = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(origin);
+        calendar.setTime(convertToDate(origin));
         calendar.setFirstDayOfWeek(Calendar.MONDAY);
 
         for (int i = 0; i < length; i++) {
@@ -128,9 +134,9 @@ public class Utils {
             } else {
                 calendar.add(Calendar.DAY_OF_WEEK, -1);
             }
-            dateRange.setEnd(calendar.getTime());
+            dateRange.setEnd(convertToLocalDate(calendar.getTime()));
             calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-            dateRange.setStart(calendar.getTime());
+            dateRange.setStart(convertToLocalDate(calendar.getTime()));
             dateRanges.add(dateRange);
         }
         return dateRanges;
@@ -149,4 +155,24 @@ public class Utils {
         }
         return dailyActivitySummaries;
     }
+
+    public static Date convertToDate(LocalDate date){
+        LocalDateTime localDateTime = date.atStartOfDay();
+        return Date.from(localDateTime.atZone(getDefaultTimeZone()).toInstant());
+    }
+
+    public static LocalDate convertToLocalDate(Date date){
+        return date.toInstant().atZone(getDefaultTimeZone()).toLocalDate();
+    }
+
+    public static ZoneId getDefaultTimeZone(){
+        return ZoneId.systemDefault();
+    }
+
+    public static List<FeeBoost> convertToFeeBoosts(Set<Object> set) {
+        return set.stream()
+                .map(ele -> JSON.parseObject((String) ele, FeeBoost.class))
+                .collect(Collectors.toList());
+    }
+
 }

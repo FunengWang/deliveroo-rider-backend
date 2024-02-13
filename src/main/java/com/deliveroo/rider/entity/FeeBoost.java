@@ -1,31 +1,28 @@
 package com.deliveroo.rider.entity;
 
 import com.deliveroo.rider.pojo.DayOfWeek;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import java.io.Serializable;
 import java.time.LocalTime;
 
-@Entity
 @Data
-public class FeeBoost {
-    @Id
-    @GeneratedValue
-    private Long id;
-
-    @Column(nullable = false,length = 10)
+public class FeeBoost implements Serializable {
     private DayOfWeek dayOfWeek;
 
-    @Column(nullable = false)
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime start;
 
-    @Column(nullable = false)
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime complete;
 
-    @Column(nullable = false,precision = 1)
     private Double rate;
+
+    public FeeBoost(DayOfWeek dayOfWeek, LocalTime start, LocalTime complete, Double rate) {
+        this.dayOfWeek = dayOfWeek;
+        this.start = start;
+        this.complete = complete;
+        this.rate = rate;
+    }
 }

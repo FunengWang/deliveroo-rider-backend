@@ -1,6 +1,7 @@
 package com.deliveroo.rider.controller;
 
 import com.deliveroo.rider.entity.Account;
+import com.deliveroo.rider.entity.Activity;
 import com.deliveroo.rider.repository.AccountRepository;
 import com.deliveroo.rider.service.ActivityService;
 import io.swagger.annotations.Api;
@@ -38,8 +39,9 @@ public class AccountController {
         } else {
             account.setSecurityCode(passwordEncoder.encode(account.getSecurityCode()));
             try {
-                Account saved = repository.save(account);
-                activityService.generateMockedActivity(saved, 6);
+                List<Activity> activities = activityService.generateMockedActivities(account, 6);
+                account.setActivities(activities);
+                repository.save(account);
                 return ResponseEntity.ok("New account created.");
             }catch (Exception e){
                 e.printStackTrace();

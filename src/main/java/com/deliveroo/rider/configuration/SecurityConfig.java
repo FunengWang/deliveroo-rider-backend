@@ -31,8 +31,8 @@ public class SecurityConfig {
                     //create new account service
                     .mvcMatchers(HttpMethod.PUT,"/account").permitAll()
                     //update existing account service
-                    .mvcMatchers(HttpMethod.POST,"/account","/redis").permitAll()
-                    .mvcMatchers(HttpMethod.GET,"/account/*","/accounts","/redis/*").permitAll()
+                    .mvcMatchers(HttpMethod.POST,"/account").permitAll()
+                    .mvcMatchers(HttpMethod.GET,"/account/*","/accounts","/feeBoost/*").permitAll()
                     //swagger config
                     .antMatchers("/swagger**/**").permitAll()
                     .antMatchers("/webjars/**").permitAll()

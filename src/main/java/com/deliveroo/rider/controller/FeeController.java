@@ -1,10 +1,12 @@
 package com.deliveroo.rider.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.deliveroo.rider.entity.FeeBoost;
 import com.deliveroo.rider.pojo.DayOfWeek;
 import com.deliveroo.rider.pojo.dto.FeeInfo;
-import com.deliveroo.rider.repository.FeeBoostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.BoundSetOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,52 +15,76 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.deliveroo.rider.util.Utils.convertToFeeBoosts;
+import static com.deliveroo.rider.util.Constants.*;
+
 @RestController
 public class FeeController {
     @Autowired
-    private FeeBoostRepository repository;
+    private RedisTemplate<String, Object> redisTemplate;
 
-    @GetMapping("/feeBoosts/{day}")
-    public ResponseEntity<List<FeeInfo>> getFeeBoostsByDay(@PathVariable("day") DayOfWeek dayOfWeek){
-        Iterable<FeeBoost> feeBoostIterable = null;
-        switch (dayOfWeek){
+    @GetMapping("/feeBoost/{day}")
+    public ResponseEntity<Object> getFeeBoostsByDay(@PathVariable("day") DayOfWeek dayOfWeek) {
+        List<FeeBoost> feeBoostList = new ArrayList<>();
+        BoundSetOperations<String, Object> set = redisTemplate.boundSetOps(FEE_BOOSTS_KEY);
+        List<FeeBoost> allFeeBoosts = convertToFeeBoosts(set.members());
+        switch (dayOfWeek) {
             case MONDAY:
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.MONDAY.ordinal())
+                        .collect(Collectors.toList());
+                break;
             case TUESDAY:
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.TUESDAY.ordinal())
+                        .collect(Collectors.toList());
+                break;
             case WEDNESDAY:
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.WEDNESDAY.ordinal())
+                        .collect(Collectors.toList());
+                break;
             case THURSDAY:
-                feeBoostIterable = repository.findAllByDayOfWeek(dayOfWeek);
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.THURSDAY.ordinal())
+                        .collect(Collectors.toList());
                 break;
             case FRIDAY:
-                feeBoostIterable = repository.findByDayOfWeekIn(
-                        Arrays.asList(DayOfWeek.FRIDAY.ordinal(),
-                                DayOfWeek.SATURDAY.ordinal(),
-                                DayOfWeek.SUNDAY.ordinal()));
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.FRIDAY.ordinal() ||
+                                ele.getDayOfWeek().ordinal() == DayOfWeek.SATURDAY.ordinal() ||
+                                ele.getDayOfWeek().ordinal() == DayOfWeek.SUNDAY.ordinal())
+                        .collect(Collectors.toList());
                 break;
             case SATURDAY:
-                feeBoostIterable = repository.findByDayOfWeekIn(
-                        Arrays.asList(DayOfWeek.SATURDAY.ordinal(),
-                                DayOfWeek.SUNDAY.ordinal()));
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.SATURDAY.ordinal() || ele.getDayOfWeek().ordinal() == DayOfWeek.SUNDAY.ordinal())
+                        .collect(Collectors.toList());
                 break;
             case SUNDAY:
-                feeBoostIterable = repository.findAllByDayOfWeek(DayOfWeek.SUNDAY);
+                feeBoostList = allFeeBoosts
+                        .stream()
+                        .filter(ele -> ele.getDayOfWeek().ordinal() == DayOfWeek.SUNDAY.ordinal())
+                        .collect(Collectors.toList());
                 break;
         }
-        if(feeBoostIterable!=null){
-            Iterator<FeeBoost> iterator = feeBoostIterable.iterator();
-            List<FeeBoost> list = new ArrayList<>();
-            while(iterator.hasNext()){
-                FeeBoost next = iterator.next();
-                list.add(next);
-            }
-            return ResponseEntity.ok().body(formatFeeBoostList(list));
-        }else {
+        if (!feeBoostList.isEmpty()) {
+            return ResponseEntity.ok().body(formatFeeBoostList(feeBoostList));
+        } else {
             return ResponseEntity.badRequest().build();
         }
     }
 
+
     private List<FeeInfo> formatFeeBoostList(List<FeeBoost> feeBoostList) {
         Map<String, List<FeeBoost>> map = feeBoostList.stream()
-                .collect(Collectors.groupingBy(ele-> ele.getDayOfWeek().toString() ));
+                .collect(Collectors.groupingBy(ele -> ele.getDayOfWeek().toString()));
         List<FeeInfo> feeInfoList = new ArrayList<>();
         for (Map.Entry<String, List<FeeBoost>> entry : map.entrySet()) {
             FeeInfo feeInfo = new FeeInfo();
@@ -69,74 +95,11 @@ public class FeeController {
         feeInfoList.sort(Comparator.comparing(a -> DayOfWeek.valueOf(a.getDate())));
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM", Locale.ENGLISH);
-        for(int i=0;i<feeInfoList.size();i++){
+        for (int i = 0; i < feeInfoList.size(); i++) {
             FeeInfo feeInfo = feeInfoList.get(i);
             LocalDate nextDay = currentDate.plusDays(i);
-            feeInfo.setDate(String.format("%s %s",feeInfo.getDate(),nextDay.format(formatter).toUpperCase()));
+            feeInfo.setDate(String.format("%s %s", feeInfo.getDate(), nextDay.format(formatter).toUpperCase()));
         }
         return feeInfoList;
-    }
-
-    @GetMapping("/feeBoosts")
-     public ResponseEntity<List<FeeBoost>> getFeeBoosts() {
-        Iterable<FeeBoost> feeBoostIterable = repository.findAll();
-        if(feeBoostIterable!=null){
-            Iterator<FeeBoost> iterator = feeBoostIterable.iterator();
-            List<FeeBoost> list = new ArrayList<>();
-            while(iterator.hasNext()){
-                FeeBoost next = iterator.next();
-                list.add(next);
-            }
-            return ResponseEntity.ok().body(list);
-        }else {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/feeBoosts")
-    public ResponseEntity<List<FeeBoost>> addFeeBoosts(@RequestBody List<FeeBoost> feeBoosts) {
-        Iterable<FeeBoost> iterable = repository.saveAll(feeBoosts);
-        if(iterable!=null){
-            Iterator<FeeBoost> iterator = iterable.iterator();
-            List<FeeBoost> list = new ArrayList<>();
-            while(iterator.hasNext()){
-                list.add(iterator.next());
-            }
-            return ResponseEntity.ok().body(list);
-        } else {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PostMapping("/feeBoost")
-    public ResponseEntity<String> updateFeeBoost(@RequestBody FeeBoost feeBoost) {
-        if(feeBoost.getId() == null){
-            return ResponseEntity.badRequest().body("Update operation should provide Id!");
-        } else {
-            Optional<FeeBoost> optional = repository.findById(feeBoost.getId());
-            if(optional.isPresent()){
-                FeeBoost newFeeBoost = repository.save(optional.get());
-                return ResponseEntity.ok().body("Update FeeBoost Operation Completed.");
-            }else {
-                return ResponseEntity.badRequest().body("Can't find feeBoost with provided Id!");
-            }
-        }
-    }
-
-    @GetMapping("/feeBoost/{id}")
-    public ResponseEntity<FeeBoost> searchFeeBoost(@PathVariable("id") Long id){
-        Optional<FeeBoost> optional = repository.findById(id);
-        return optional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
-    }
-
-    @DeleteMapping("/feeBoost/{id}")
-    public ResponseEntity<String> deleteFeeBoost(@PathVariable("id") Long id){
-        Optional<FeeBoost> feeBoost = repository.findById(id);
-        if(feeBoost.isPresent()){
-            repository.deleteById(id);
-            return ResponseEntity.ok().body("FeeBoost deleted");
-        }else {
-            return ResponseEntity.badRequest().body("FeeBoost doesn't exist!");
-        }
     }
 }

@@ -1,6 +1,7 @@
 package com.deliveroo.rider.pojo.dto;
 
 import com.deliveroo.rider.entity.FeeBoost;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.List;
