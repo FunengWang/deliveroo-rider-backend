@@ -1,12 +1,12 @@
 package com.deliveroo.rider.controller;
 
 import com.deliveroo.rider.entity.Account;
+import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.pojo.dto.CustomUserDetails;
 import com.deliveroo.rider.pojo.dto.LoginRequest;
 import com.deliveroo.rider.configuration.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,7 +24,7 @@ public class AuthController {
     JwtTokenProvider tokenProvider;
 
     @PostMapping("/auth")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public CommonResult<String> login(@RequestBody LoginRequest loginRequest) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginRequest.getUserName(), loginRequest.getPassword());
         try{
@@ -33,12 +33,12 @@ public class AuthController {
             CustomUserDetails customUserDetails = (CustomUserDetails) principal;
             Account account = customUserDetails.getAccount();
             String token = tokenProvider.generateToken(account);
-            return ResponseEntity.ok(token);
+            return new CommonResult<String>().generateOK(null,token);
         }catch (Exception e){
             if(e instanceof AccountExpiredException){
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account Expired!");
+                return new CommonResult<>(HttpStatus.UNAUTHORIZED.value(),"Account Expired!",null);
             }else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                return new CommonResult<>(HttpStatus.UNAUTHORIZED.value(),null,null);
             }
         }
     }

@@ -9,7 +9,6 @@ import com.deliveroo.rider.repository.ActivityRepository;
 import com.deliveroo.rider.service.ActivityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -33,7 +32,7 @@ public class ActivityController {
     public static final String TOKEN_HEADER = "Token";
 
     @GetMapping("/activities/{startYear}/{startMonth}/months/{months}")
-    public ResponseEntity<List<MonthlyActivitySummary>> monthlyActivities(
+    public CommonResult<List<MonthlyActivitySummary>> monthlyActivities(
             @PathVariable("startYear") int year,
             @PathVariable("startMonth") Month startMonth,
             @PathVariable("months") int length,
@@ -61,11 +60,11 @@ public class ActivityController {
             double earnings = calculateTotalEarnings(monthlyActivities);
             list.add(new MonthlyActivitySummary(month.getAbbreviation(), orders, earnings));
         }
-        return ResponseEntity.ok().body(list);
+        return new CommonResult<List<MonthlyActivitySummary>>().generateOK(null,list);
     }
 
     @GetMapping("/activities/{year}/{month}")
-    public ResponseEntity<MonthlyActivity> monthlyActivity(@PathVariable("year") int year,
+    public CommonResult<MonthlyActivity> monthlyActivity(@PathVariable("year") int year,
                                                            @PathVariable("month") Month month,
                                                            @RequestHeader(TOKEN_HEADER) String token) {
         Account account = activityService.getAccountByToken(token);
@@ -75,11 +74,11 @@ public class ActivityController {
         int activityDays = calculateActivityDays(monthlyActivities);
         List<DailyActivitySummary> dailyActivities = mapToDailyActivitySummary(monthlyActivities);
         MonthlyActivity monthlyActivity = new MonthlyActivity(month.getAbbreviation(), monthlyOrders, monthlyEarnings, activityDays, dailyActivities);
-        return ResponseEntity.ok().body(monthlyActivity);
+        return new CommonResult<MonthlyActivity>().generateOK(null, monthlyActivity);
     }
 
     @GetMapping("/activity/{id}")
-    public ResponseEntity<DailyActivity> dailyActivity(@PathVariable("id") Long id) {
+    public CommonResult<DailyActivity> dailyActivity(@PathVariable("id") Long id) {
         Optional<Activity> optional = activityRepository.findById(id);
         if (optional.isPresent()) {
             Activity activity = optional.get();
@@ -100,14 +99,14 @@ public class ActivityController {
             dailyActivity.setOrders(dailyOrders);
             dailyActivity.setId(activity.getId());
             dailyActivity.setDailyEarnings(dailyEarnings);
-            return ResponseEntity.ok().body(dailyActivity);
+            return new CommonResult<DailyActivity>().generateOK(null,dailyActivity);
         } else {
-            return ResponseEntity.badRequest().build();
+            return new CommonResult<DailyActivity>().generateBadRequest(null,null);
         }
     }
 
     @GetMapping("/activities/from/{fromDate}/to/{toDate}")
-    public ResponseEntity<WeeklyActivity> dayActivities(
+    public CommonResult<WeeklyActivity> dayActivities(
             @PathVariable("fromDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate from,
             @PathVariable("toDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate to,
             @RequestHeader(TOKEN_HEADER) String token) {
@@ -126,11 +125,11 @@ public class ActivityController {
         weeklyActivity.setComplete(to);
         weeklyActivity.setDailyActivities(dayActivities);
 
-        return ResponseEntity.ok().body(weeklyActivity);
+        return new CommonResult<WeeklyActivity>().generateOK(null,weeklyActivity);
     }
 
     @GetMapping("/activities/{date}/weeks/{weeks}")
-    public ResponseEntity<List<WeeklyActivitySummary>> weeklyActivities(
+    public CommonResult<List<WeeklyActivitySummary>> weeklyActivities(
             @PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @PathVariable("weeks") int length,
             @RequestHeader(TOKEN_HEADER) String token) {
@@ -156,6 +155,6 @@ public class ActivityController {
             weeklyActivitySummary.setComplete(end);
             weeklyActivities.add(weeklyActivitySummary);
         }
-        return ResponseEntity.ok().body(weeklyActivities);
+        return new CommonResult<List<WeeklyActivitySummary>>().generateOK(null,weeklyActivities);
     }
 }

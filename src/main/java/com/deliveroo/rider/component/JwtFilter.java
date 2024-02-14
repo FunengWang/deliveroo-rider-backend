@@ -1,11 +1,14 @@
 package com.deliveroo.rider.component;
 
+import com.alibaba.fastjson.JSON;
 import com.deliveroo.rider.entity.Account;
+import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.pojo.dto.CustomUserDetails;
 import com.deliveroo.rider.configuration.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,6 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = request.getHeader(TOKEN_HEADER);
         if (token == null || token.isEmpty()) {
             filterChain.doFilter(request, response);
+            response.getWriter().println(new CommonResult<>(HttpStatus.FORBIDDEN.value(), "Forbidden",null));
             return;
         }
 
@@ -55,9 +59,9 @@ public class JwtFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             if (e instanceof ExpiredJwtException) {
-                response.getWriter().println("Token Expired!");
+                response.getWriter().println(JSON.toJSONString(new CommonResult<>(HttpStatus.UNAUTHORIZED.value(), "Token Expired",null)));
             } else {
-                response.getWriter().println("Unauthorized");
+                response.getWriter().println(JSON.toJSONString(new CommonResult<>(HttpStatus.UNAUTHORIZED.value(), "Unauthorized",null)));
             }
             return;
         }

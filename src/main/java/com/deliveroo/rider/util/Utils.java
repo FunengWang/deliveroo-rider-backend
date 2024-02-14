@@ -6,8 +6,10 @@ import com.deliveroo.rider.entity.FeeBoost;
 import com.deliveroo.rider.entity.Order;
 import com.deliveroo.rider.entity.OrderDetail;
 import com.deliveroo.rider.pojo.DayOfWeek;
+import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.pojo.dto.DailyActivitySummary;
 import com.deliveroo.rider.pojo.dto.DateRange;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -174,5 +176,8 @@ public class Utils {
                 .map(ele -> JSON.parseObject((String) ele, FeeBoost.class))
                 .collect(Collectors.toList());
     }
+
+
+
 
 }

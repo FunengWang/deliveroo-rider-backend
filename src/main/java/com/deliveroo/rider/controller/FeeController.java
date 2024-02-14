@@ -1,13 +1,12 @@
 package com.deliveroo.rider.controller;
 
-import com.alibaba.fastjson.JSON;
 import com.deliveroo.rider.entity.FeeBoost;
 import com.deliveroo.rider.pojo.DayOfWeek;
+import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.pojo.dto.FeeInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,7 +23,7 @@ public class FeeController {
     private RedisTemplate<String, Object> redisTemplate;
 
     @GetMapping("/feeBoost/{day}")
-    public ResponseEntity<Object> getFeeBoostsByDay(@PathVariable("day") DayOfWeek dayOfWeek) {
+    public CommonResult<List<FeeInfo>> getFeeBoostsByDay(@PathVariable("day") DayOfWeek dayOfWeek) {
         List<FeeBoost> feeBoostList = new ArrayList<>();
         BoundSetOperations<String, Object> set = redisTemplate.boundSetOps(FEE_BOOSTS_KEY);
         List<FeeBoost> allFeeBoosts = convertToFeeBoosts(set.members());
@@ -75,9 +74,9 @@ public class FeeController {
                 break;
         }
         if (!feeBoostList.isEmpty()) {
-            return ResponseEntity.ok().body(formatFeeBoostList(feeBoostList));
+            return new CommonResult<List<FeeInfo>>().generateOK(null,formatFeeBoostList(feeBoostList));
         } else {
-            return ResponseEntity.badRequest().build();
+            return new CommonResult().generateBadRequest(null,null);
         }
     }
 
