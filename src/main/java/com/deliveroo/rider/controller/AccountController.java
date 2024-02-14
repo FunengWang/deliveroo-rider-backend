@@ -49,7 +49,7 @@ public class AccountController {
         }
     }
 
-    @GetMapping("/account/{riderId}")
+    @GetMapping("/account/riderId/{riderId}")
     @ApiOperation(value = "Search existing account", notes = "Search existing account")
     public CommonResult<Account> searchExistingAccount(@PathVariable("riderId") String riderId) {
         Optional<Account> optional = repository.findByRiderId(riderId);
@@ -58,6 +58,12 @@ public class AccountController {
         }else {
             return new CommonResult<Account>().generateBadRequest("Can't find this account!", null);
         }
+    }
+
+    @GetMapping("/account/info")
+    public CommonResult<Account> getAccountInfo(@RequestHeader("Token") String token){
+        Account account = activityService.getAccountByToken(token);
+        return new CommonResult<Account>().generateOK(null,account);
     }
 
     @PostMapping("/account")

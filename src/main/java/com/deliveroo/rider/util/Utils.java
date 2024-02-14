@@ -60,22 +60,20 @@ public class Utils {
         return formatDouble(earnings);
     }
 
-    public static double calculateTotalEarnings(Order order) {
-        double earnings = BigDecimal.valueOf(order.getFee())
-                .add(BigDecimal.valueOf(order.getExtra()))
-                .add(BigDecimal.valueOf(order.getTip()))
-                .doubleValue();
-        return formatDouble(earnings);
+
+    public static LocalTime calculateStartTime(int hour, int minute) {
+        return LocalTime.of(hour, minute);
     }
 
-    public static LocalTime calculateCompleteTime(Order order) {
-        Optional<OrderDetail> max = order.getOrderDetails().stream()
-                .max(Comparator.comparing(OrderDetail::getComplete));
-        return max.map(OrderDetail::getComplete).orElse(null);
-    }
-
-    public static int calculateSubOrders(Order order) {
-        return order.getOrderDetails().size();
+    public static LocalTime calculateCompleteTime(int hour, int minute) {
+        if (minute > 59) {
+            hour++;
+            minute -= 60;
+        }
+        if (hour > 23) {
+            hour -= 24;
+        }
+        return LocalTime.of(hour, minute);
     }
 
     public static double calculateTotalFees(Activity activity) {

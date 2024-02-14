@@ -58,7 +58,7 @@ public class ActivityController {
                     .collect(Collectors.toList());
             int orders = calculateTotalOrders(monthlyActivities);
             double earnings = calculateTotalEarnings(monthlyActivities);
-            list.add(new MonthlyActivitySummary(month.getAbbreviation(), orders, earnings));
+            list.add(new MonthlyActivitySummary(year, month.name(),month.getAbbreviation(), orders, earnings));
         }
         return new CommonResult<List<MonthlyActivitySummary>>().generateOK(null,list);
     }
@@ -73,7 +73,7 @@ public class ActivityController {
         int monthlyOrders = calculateTotalOrders(monthlyActivities);
         int activityDays = calculateActivityDays(monthlyActivities);
         List<DailyActivitySummary> dailyActivities = mapToDailyActivitySummary(monthlyActivities);
-        MonthlyActivity monthlyActivity = new MonthlyActivity(month.getAbbreviation(), monthlyOrders, monthlyEarnings, activityDays, dailyActivities);
+        MonthlyActivity monthlyActivity = new MonthlyActivity(year, month, monthlyOrders, monthlyEarnings, activityDays, dailyActivities);
         return new CommonResult<MonthlyActivity>().generateOK(null, monthlyActivity);
     }
 
@@ -81,24 +81,7 @@ public class ActivityController {
     public CommonResult<DailyActivity> dailyActivity(@PathVariable("id") Long id) {
         Optional<Activity> optional = activityRepository.findById(id);
         if (optional.isPresent()) {
-            Activity activity = optional.get();
-            int dailyOrders = calculateTotalOrders(activity);
-            double dailyEarnings = calculateTotalEarnings(activity);
-            double fees = calculateTotalFees(activity);
-            double tips = calculateTotalTips(activity);
-            double extras = calculateTotalExtraFees(activity);
-            List<OrderSummary> orderSummaries = new ArrayList<>();
-            for (Order order : activity.getOrders()) {
-                double earnings = calculateTotalEarnings(order);
-                LocalTime completeTime = calculateCompleteTime(order);
-                int subOrders = calculateSubOrders(order);
-                OrderSummary orderSummary = new OrderSummary(order.getShop(), completeTime, earnings, subOrders, order.getId());
-                orderSummaries.add(orderSummary);
-            }
-            DailyActivity dailyActivity = new DailyActivity(activity.getDate(), fees, extras, tips, orderSummaries);
-            dailyActivity.setOrders(dailyOrders);
-            dailyActivity.setId(activity.getId());
-            dailyActivity.setDailyEarnings(dailyEarnings);
+            DailyActivity dailyActivity = activityService.generateDailyActivity(optional.get());
             return new CommonResult<DailyActivity>().generateOK(null,dailyActivity);
         } else {
             return new CommonResult<DailyActivity>().generateBadRequest(null,null);

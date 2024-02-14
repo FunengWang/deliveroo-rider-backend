@@ -1,28 +1,24 @@
 package com.deliveroo.rider.pojo.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.deliveroo.rider.serialization.serializer.WeeklyActivitySummarySerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonSerialize(using = WeeklyActivitySummarySerializer.class)
 public class WeeklyActivitySummary {
-    @JsonFormat(pattern = "d MMM",locale = "en")
     private LocalDate start;
 
-    @JsonFormat(pattern = "d MMM",locale = "en")
     private LocalDate complete;
 
     private int orders;
 
-    @JsonProperty("earnings")
     private double weeklyEarnings;
 
     public WeeklyActivitySummary(int orders, double weeklyEarnings){

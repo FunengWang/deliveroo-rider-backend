@@ -5,6 +5,9 @@ import com.deliveroo.rider.entity.*;
 import com.deliveroo.rider.pojo.DayOfWeek;
 import com.deliveroo.rider.pojo.Month;
 import com.deliveroo.rider.pojo.WorkingType;
+import com.deliveroo.rider.pojo.dto.DailyActivity;
+import com.deliveroo.rider.pojo.dto.OrderSummary;
+import com.deliveroo.rider.pojo.dto.PlaceSummary;
 import com.deliveroo.rider.repository.AccountRepository;
 import com.deliveroo.rider.repository.ActivityRepository;
 import com.deliveroo.rider.repository.OrderDetailRepository;
@@ -14,8 +17,6 @@ import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import static com.deliveroo.rider.util.Utils.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -24,8 +25,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.deliveroo.rider.util.Utils.mapToDayOfWeek;
 import static com.deliveroo.rider.util.Constants.*;
+import static com.deliveroo.rider.util.Utils.*;
 
 @Service
 public class ActivityService {
@@ -113,6 +114,54 @@ public class ActivityService {
         Optional<Account> optionalAccount = accountRepository.findById(accountId);
         return optionalAccount.orElse(null);
     }
+
+    public DailyActivity generateDailyActivity(Activity activity){
+        DailyActivity dailyActivity = new DailyActivity();
+        dailyActivity.setId(activity.getId());
+        dailyActivity.setDate(activity.getDate());
+        dailyActivity.setOrders(calculateTotalOrders(activity));
+        dailyActivity.setFees(calculateTotalFees(activity));
+        dailyActivity.setExtraFees(calculateTotalExtraFees(activity));
+        dailyActivity.setTips(calculateTotalTips(activity));
+        dailyActivity.setDailyEarnings(calculateTotalEarnings(activity));
+        dailyActivity.setPlaceSummaries(generatePlaceSummaries(activity.getOrders()));
+        return dailyActivity;
+    }
+
+    private List<PlaceSummary> generatePlaceSummaries(List<Order> orders){
+        List<PlaceSummary> placeSummaries = new ArrayList<>();
+        List<OrderSummary> orderSummaries = generateOrderSummaries(orders);
+        Map<String, List<OrderSummary>> map = orderSummaries
+                .stream()
+                .collect(Collectors.groupingBy(OrderSummary::getPlace));
+        Iterator<Map.Entry<String, List<OrderSummary>>> iterator = map.entrySet().iterator();
+        while(iterator.hasNext()){
+            Map.Entry<String, List<OrderSummary>> entry = iterator.next();
+            PlaceSummary placeSummary = new PlaceSummary();
+            placeSummary.setPlace(entry.getKey());
+            placeSummary.setOrderSummaries(entry.getValue());
+            placeSummaries.add(placeSummary);
+        }
+        return placeSummaries;
+    }
+
+    private List<OrderSummary> generateOrderSummaries(List<Order> orders) {
+        List<OrderSummary> orderSummaries = new ArrayList<>();
+        for (Order order : orders) {
+            OrderSummary orderSummary = new OrderSummary();
+            orderSummary.setId(order.getId());
+            orderSummary.setPlace(order.getPlace());
+            orderSummary.setShop(order.getShop());
+            orderSummary.setEarnings(order.getEarnings());
+            orderSummary.setHasSubOrder(order.hasSubOrder());
+            orderSummary.setStart(order.getStartTime());
+            orderSummary.setComplete(order.getCompleteTime());
+            orderSummaries.add(orderSummary);
+        }
+        orderSummaries.sort(Comparator.comparing(ele->ele.getStart()));
+        return orderSummaries;
+    }
+
     private Activity randomActivity(Calendar calendar, Account account) {
         Activity activity = new Activity();
         ZonedDateTime zonedDateTime = calendar.toInstant().atZone(ZoneId.systemDefault());
@@ -264,20 +313,7 @@ public class ActivityService {
         return random.nextInt((max - min) + 1) + min;
     }
 
-    private LocalTime calculateCompleteTime(int hour, int minute) {
-        if (minute > 59) {
-            hour++;
-            minute -= 60;
-        }
-        if (hour > 23) {
-            hour -= 24;
-        }
-        return LocalTime.of(hour, minute);
-    }
 
-    private LocalTime calculateStartTime(int hour, int minute) {
-        return LocalTime.of(hour, minute);
-    }
 
     private boolean ifInExtraPeriod(FeeBoost feeBoost, List<OrderDetail> orderDetails) {
         return orderDetails.stream().anyMatch(ele ->

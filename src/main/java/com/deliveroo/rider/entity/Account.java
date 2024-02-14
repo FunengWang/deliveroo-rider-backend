@@ -35,12 +35,12 @@ public class Account implements Serializable {
     private Long id;
 
     @Column(nullable = false, length = 15)
-    @ApiModelProperty(required = true,example = "Funeng")
+    @ApiModelProperty(required = true,example = "Joe")
     private String firstName;
 
     @Column(nullable = false, length = 15)
-    @ApiModelProperty(required = true,example = "Wang")
-    private String lastname;
+    @ApiModelProperty(required = true,example = "Biden")
+    private String lastName;
 
     @Column(nullable = false, length = 30)
     @ApiModelProperty(required = true,example = "838761234")
@@ -52,7 +52,7 @@ public class Account implements Serializable {
     private CallingCode callingCode = CallingCode.IRELAND;
 
     @Column(nullable = false, length = 30, unique = true)
-    @ApiModelProperty(required = true,example = "funengwang23@gmail.com")
+    @ApiModelProperty(required = true,example = "joe.biden@gmail.com")
     private String email;
 
     @Column(nullable = false, length = 10)

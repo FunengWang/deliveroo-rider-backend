@@ -38,7 +38,7 @@ public class AuthController {
             if(e instanceof AccountExpiredException){
                 return new CommonResult<>(HttpStatus.UNAUTHORIZED.value(),"Account Expired!",null);
             }else {
-                return new CommonResult<>(HttpStatus.UNAUTHORIZED.value(),null,null);
+                return new CommonResult<>(HttpStatus.UNAUTHORIZED.value(),HttpStatus.UNAUTHORIZED.name(),null);
             }
         }
     }

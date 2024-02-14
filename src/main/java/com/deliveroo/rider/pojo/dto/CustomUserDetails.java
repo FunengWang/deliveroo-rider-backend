@@ -30,7 +30,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.account.getFirstName() + " " + this.account.getLastname();
+        return this.account.getFirstName() + " " + this.account.getLastName();
     }
 
     @Override

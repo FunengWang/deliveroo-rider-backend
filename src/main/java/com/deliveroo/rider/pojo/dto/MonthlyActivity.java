@@ -1,5 +1,6 @@
 package com.deliveroo.rider.pojo.dto;
 
+import com.deliveroo.rider.pojo.Month;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,12 +16,12 @@ public class MonthlyActivity extends MonthlyActivitySummary{
     @JsonProperty("dayActivities")
     private List<DailyActivitySummary> dailyActivities;
 
-    public MonthlyActivity(String monthAbbreviation,
+    public MonthlyActivity(int year, Month month,
                            int orders,
                            double monthlyEarnings,
                            int activityDays,
                            List<DailyActivitySummary> dailyActivities){
-        super(monthAbbreviation, orders, monthlyEarnings);
+        super(year,month.name(),month.getAbbreviation(), orders, monthlyEarnings);
         this.activityDays = activityDays;
         this.dailyActivities = dailyActivities;
     }

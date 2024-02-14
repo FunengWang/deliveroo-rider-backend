@@ -1,26 +1,25 @@
 package com.deliveroo.rider.pojo.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.deliveroo.rider.serialization.serializer.DailyActivitySerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
+@JsonSerialize(using = DailyActivitySerializer.class)
 public class DailyActivity extends DailyActivitySummary {
-    @JsonFormat(pattern = "E, dd MMM",locale = "en")
-    private LocalDate date;
-
     private double fees;
 
     private double extraFees;
 
     private double tips;
 
-    private List<OrderSummary> orderSummaries;
+    private List<PlaceSummary> placeSummaries;
 }

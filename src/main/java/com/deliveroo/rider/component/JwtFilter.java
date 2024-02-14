@@ -39,7 +39,6 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = request.getHeader(TOKEN_HEADER);
         if (token == null || token.isEmpty()) {
             filterChain.doFilter(request, response);
-            response.getWriter().println(new CommonResult<>(HttpStatus.FORBIDDEN.value(), "Forbidden",null));
             return;
         }
 

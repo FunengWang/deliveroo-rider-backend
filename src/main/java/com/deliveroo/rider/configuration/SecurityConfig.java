@@ -32,7 +32,7 @@ public class SecurityConfig {
                     .mvcMatchers(HttpMethod.PUT,"/account").permitAll()
                     //update existing account service
                     .mvcMatchers(HttpMethod.POST,"/account").permitAll()
-                    .mvcMatchers(HttpMethod.GET,"/account/*","/accounts","/feeBoost/*").permitAll()
+                    .mvcMatchers(HttpMethod.GET,"/account/riderId/*","/accounts","/feeBoost/*").permitAll()
                     //swagger config
                     .antMatchers("/swagger**/**").permitAll()
                     .antMatchers("/webjars/**").permitAll()

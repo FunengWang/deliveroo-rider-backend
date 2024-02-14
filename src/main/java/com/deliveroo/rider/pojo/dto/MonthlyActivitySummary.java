@@ -9,7 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MonthlyActivitySummary {
-    @JsonProperty("month")
+    protected int year;
+
+    protected String month;
+
+    @JsonProperty("monthAbbr")
     protected String monthAbbreviation;
 
     protected int orders;
