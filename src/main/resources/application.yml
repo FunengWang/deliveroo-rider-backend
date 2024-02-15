@@ -10,14 +10,14 @@ spring:
       validation-query: SELECT 1
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: org.gjt.mm.mysql.Driver
-    url: "jdbc:mysql://localhost:3306/rider_db?useUnicode=true&characterEncoding=utf-8&useSSL=false"
+    url: "jdbc:mysql://localhost:3306/rider_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true"
     username: "dev"
     password: "developer"
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     open-in-view: true
     hibernate.ddl-auto: "update"
 #    hibernate.ddl-auto: "create"
