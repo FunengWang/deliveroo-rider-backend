@@ -129,7 +129,7 @@ public class JpaRepositoryTest {
         account.setSecurityCode("606029");
         account.setRiderId("834039");
         account.setFirstName("Funeng");
-        account.setLastname("Wang");
+        account.setLastName("Wang");
         account.setExpirationDate(LocalDateTime.now());
         account.setActivities(mockActivities(account));
         return account;

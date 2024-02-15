@@ -17,13 +17,14 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     open-in-view: true
     hibernate.ddl-auto: "update"
 #    hibernate.ddl-auto: "create"
     show-sql: true
   redis:
-    host: 192.168.206.128
-#    host: localhost
+#    host: 192.168.206.128
+    host: localhost
     port: 6379
 #    database: 0
     timeout: 3000 #最大等待时间，3000ms,超时抛出异常，否则请求一直等待
