@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 @RestController
 @Api(tags = "Account Administration")
+@Validated
 public class AccountController {
     @Autowired
     private AccountRepository repository;
@@ -31,7 +33,7 @@ public class AccountController {
 
     @PutMapping("/account")
     @ApiOperation(value = "Create new account", notes = "Create new account and add mocked activities this account")
-    public CommonResult createAccount(@RequestBody @Validated Account account) {
+    public CommonResult createAccount(@RequestBody @Valid Account account) {
         Optional<Account> optional = repository.findByRiderId(account.getRiderId());
         if (optional.isPresent()) {
             return new CommonResult<>().generateBadRequest("Account already existed. Can't create duplicate account!",null);
