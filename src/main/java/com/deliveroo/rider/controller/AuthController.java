@@ -5,6 +5,7 @@ import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.pojo.dto.CustomUserDetails;
 import com.deliveroo.rider.pojo.dto.LoginRequest;
 import com.deliveroo.rider.configuration.JwtTokenProvider;
+import com.deliveroo.rider.pojo.dto.TokenInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AccountExpiredException;
@@ -24,7 +25,7 @@ public class AuthController {
     JwtTokenProvider tokenProvider;
 
     @PostMapping("/auth")
-    public CommonResult<String> login(@RequestBody LoginRequest loginRequest) {
+    public CommonResult<TokenInfo> login(@RequestBody LoginRequest loginRequest) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginRequest.getUserName(), loginRequest.getPassword());
         try{
@@ -32,8 +33,8 @@ public class AuthController {
             Object principal = authenticate.getPrincipal();
             CustomUserDetails customUserDetails = (CustomUserDetails) principal;
             Account account = customUserDetails.getAccount();
-            String token = tokenProvider.generateToken(account);
-            return new CommonResult<String>().generateOK(null,token);
+            TokenInfo tokenInfo = tokenProvider.generateToken(account);
+            return new CommonResult<TokenInfo>().generateOK(null,tokenInfo);
         }catch (Exception e){
             if(e instanceof AccountExpiredException){
                 return new CommonResult<>(HttpStatus.UNAUTHORIZED.value(),"Account Expired!",null);

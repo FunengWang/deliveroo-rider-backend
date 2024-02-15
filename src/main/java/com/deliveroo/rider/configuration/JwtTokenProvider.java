@@ -1,6 +1,7 @@
 package com.deliveroo.rider.configuration;
 
 import com.deliveroo.rider.entity.Account;
+import com.deliveroo.rider.pojo.dto.TokenInfo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -23,12 +24,13 @@ public class JwtTokenProvider {
     @Autowired
     private RedisTemplate<String,Object> redisTemplate;
 
-    public String generateToken(Account account) {
+    public TokenInfo generateToken(Account account) {
         String accountId = account.getId().toString();
         String riderId = account.getRiderId();
         RedisConnection connection = Objects.requireNonNull(redisTemplate.getConnectionFactory()).getConnection();
         if (Boolean.TRUE.equals(connection.exists(riderId.getBytes()))) {
-            return (String) redisTemplate.opsForValue().get(riderId);
+            String token = (String) redisTemplate.opsForValue().get(riderId);
+            return new TokenInfo(token,account.getExpirationDate());
         } else {
             String token = Jwts.builder()
                     .setId(UUID.randomUUID().toString())
@@ -43,7 +45,8 @@ public class JwtTokenProvider {
                     .compact();
             long timeout = calculateTimeout(LocalDateTime.now(),account.getExpirationDate());
             redisTemplate.opsForValue().set(riderId,token,timeout, TimeUnit.SECONDS);
-            return token;
+            TokenInfo tokenInfo = new TokenInfo(token,account.getExpirationDate());
+            return tokenInfo;
         }
     }
 
