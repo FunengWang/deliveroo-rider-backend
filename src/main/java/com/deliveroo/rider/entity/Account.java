@@ -1,5 +1,6 @@
 package com.deliveroo.rider.entity;
 
+import com.deliveroo.rider.pojo.City;
 import com.deliveroo.rider.serialization.deserializer.AccountTypeDeserializer;
 import com.deliveroo.rider.pojo.*;
 import com.deliveroo.rider.serialization.deserializer.LocalDateTimeDeserializer;
@@ -17,7 +18,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;

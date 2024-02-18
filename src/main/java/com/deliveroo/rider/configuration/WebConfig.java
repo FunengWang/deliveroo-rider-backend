@@ -1,5 +1,6 @@
 package com.deliveroo.rider.configuration;
 
+import com.deliveroo.rider.converter.CountryConverter;
 import com.deliveroo.rider.converter.DayOfWeekConverter;
 import com.deliveroo.rider.converter.MonthConverter;
 import com.deliveroo.rider.converter.WorkingTypeConverter;
@@ -15,6 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addConverter(new MonthConverter());
         registry.addConverter(new WorkingTypeConverter());
         registry.addConverter(new DayOfWeekConverter());
+        registry.addConverter(new CountryConverter());
     }
 
     @Override
