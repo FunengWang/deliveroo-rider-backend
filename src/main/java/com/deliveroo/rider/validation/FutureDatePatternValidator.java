@@ -16,7 +16,7 @@ public class FutureDatePatternValidator implements ConstraintValidator<FutureDat
     @Override
     public boolean isValid(LocalDateTime value, ConstraintValidatorContext context) {
         if (value == null) {
-            return true;
+            return false;
         }
         return (PATTERN.matcher(value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).matches()) &&
                 value.isAfter(LocalDateTime.now());
