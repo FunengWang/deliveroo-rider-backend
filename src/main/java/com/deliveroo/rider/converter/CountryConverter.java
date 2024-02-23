@@ -9,6 +9,10 @@ public class CountryConverter implements Converter<String, Country> {
         for (Country country : Country.values()) {
             if (country.name().equalsIgnoreCase(source)) {
                 return country;
+            }else if(country.getCountryName().equalsIgnoreCase(source)){
+                return country;
+            }else if(country.getAbbreviation().equalsIgnoreCase(source)){
+                return country;
             }
         }
         throw new IllegalArgumentException("No enum constant with name: " + source);

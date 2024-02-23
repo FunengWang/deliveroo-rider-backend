@@ -3,13 +3,10 @@ package com.deliveroo.rider.util;
 import com.alibaba.fastjson.JSON;
 import com.deliveroo.rider.entity.Activity;
 import com.deliveroo.rider.entity.FeeBoost;
-import com.deliveroo.rider.entity.Order;
-import com.deliveroo.rider.entity.OrderDetail;
+import com.deliveroo.rider.pojo.Busy;
 import com.deliveroo.rider.pojo.DayOfWeek;
-import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.pojo.dto.DailyActivitySummary;
 import com.deliveroo.rider.pojo.dto.DateRange;
-import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -39,6 +36,18 @@ public class Utils {
                 return DayOfWeek.SATURDAY;
             default:
                 return DayOfWeek.MONDAY;
+        }
+    }
+
+    public static Busy getRandomBusy() {
+        Random random = new Random();
+        int randomNumber = random.nextInt(10); // Generate a random number between 0 and 9
+        if (randomNumber < 3) {
+            return Busy.NOBUSY; // 3 out of 10 chance
+        } else if (randomNumber < 8) {
+            return Busy.MODERATE; // 5 out of 10 chance
+        } else {
+            return Busy.BUSY; // 2 out of 10 chance
         }
     }
 

@@ -1,16 +1,22 @@
 package com.deliveroo.rider.pojo;
 
 public enum AccountType {
-    BIKE("bike"),
-    E_BIKE("e-bike"),
-    CAR("car");
+    BIKE("bike","Bike"),
+    E_BIKE("e-bike","Electric bike"),
+    CAR("car","Car");
 
     private String value;
-    AccountType(String value) {
+    private String description;
+    AccountType(String value,String description) {
         this.value = value;
+        this.description = description;
     }
 
     public String getValue() {
         return value;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

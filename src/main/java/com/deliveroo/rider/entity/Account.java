@@ -1,6 +1,5 @@
 package com.deliveroo.rider.entity;
 
-import com.deliveroo.rider.pojo.City;
 import com.deliveroo.rider.serialization.deserializer.AccountTypeDeserializer;
 import com.deliveroo.rider.pojo.*;
 import com.deliveroo.rider.serialization.deserializer.LocalDateTimeDeserializer;
@@ -81,7 +80,8 @@ public class Account implements Serializable {
 
     @Column(length = 15)
     @ApiModelProperty(hidden = true)
-    private City city;
+    @NotBlank(message = "areaName is required!")
+    private String areaName;
 
     @Column(length = 10)
     @JsonSerialize(using = CountrySerializer.class)

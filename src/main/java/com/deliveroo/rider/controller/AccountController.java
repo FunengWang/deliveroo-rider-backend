@@ -2,8 +2,11 @@ package com.deliveroo.rider.controller;
 
 import com.deliveroo.rider.entity.Account;
 import com.deliveroo.rider.entity.Activity;
+import com.deliveroo.rider.entity.Area;
+import com.deliveroo.rider.pojo.dto.AccountInfo;
 import com.deliveroo.rider.pojo.dto.CommonResult;
 import com.deliveroo.rider.repository.AccountRepository;
+import com.deliveroo.rider.repository.AreaRepository;
 import com.deliveroo.rider.service.ActivityService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -24,6 +27,9 @@ import java.util.Optional;
 public class AccountController {
     @Autowired
     private AccountRepository repository;
+
+    @Autowired
+    private AreaRepository areaRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -63,9 +69,21 @@ public class AccountController {
     }
 
     @GetMapping("/account/info")
-    public CommonResult<Account> getAccountInfo(@RequestHeader("Token") String token){
+    public CommonResult<AccountInfo> getAccountInfo(@RequestHeader("Token") String token){
         Account account = activityService.getAccountByToken(token);
-        return new CommonResult<Account>().generateOK(null,account);
+        AccountInfo accountInfo = new AccountInfo();
+        accountInfo.setFirstName(account.getFirstName());
+        accountInfo.setLastName(account.getLastName());
+        accountInfo.setEmail(account.getEmail());
+        accountInfo.setPhone(account.getPhone());
+        accountInfo.setRiderId(account.getRiderId());
+        accountInfo.setAccountType(account.getAccountType());
+        List<Area> areas = areaRepository.findByAreaNameContainingIgnoreCase(account.getAreaName());
+        Optional<Area> first = areas.stream().findFirst();
+        if(first.isPresent()){
+            accountInfo.setArea(first.get());
+        }
+        return new CommonResult<AccountInfo>().generateOK(null,accountInfo);
     }
 
     @PostMapping("/account")

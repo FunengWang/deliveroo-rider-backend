@@ -1,7 +1,7 @@
 package com.deliveroo.rider.configuration;
 
-import com.deliveroo.rider.entity.City;
-import com.deliveroo.rider.repository.CityRepository;
+import com.deliveroo.rider.entity.Area;
+import com.deliveroo.rider.repository.AreaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -12,16 +12,16 @@ import java.util.stream.Collectors;
 @Component
 public class RedundantDataCleanupTask {
     @Autowired
-    private CityRepository cityRepository; // Assuming you have a CityRepository to interact with the database
+    private AreaRepository areaRepository;
 
-    @Scheduled(cron = "0 */1 * * * *") // Run every 1 minutes
+//    @Scheduled(cron = "0 */1 * * * *") // Run every 1 minutes
 //    @Scheduled(cron = "0 0 0 * * *") // Scheduled to run daily at midnight
     public void removeRedundantData() {
-        List<City> cities = cityRepository.findAll();
-        List<City> uniqueCities = cities.stream()
+        List<Area> areas = areaRepository.findAll();
+        List<Area> uniqueCities = areas.stream()
                 .collect(Collectors.toMap(
-                        city -> city.getCityName().toLowerCase(), // Use lowercase city names as keys
-                        city -> city,
+                        area -> area.getAreaName().toLowerCase(), // Use lowercase city names as keys
+                        area -> area,
                         (existing, replacement) -> existing // Merge strategy: Keep existing city if duplicates found
                 ))
                 .values()
@@ -29,9 +29,9 @@ public class RedundantDataCleanupTask {
                 .collect(Collectors.toList());
 
         // Delete redundant data
-        for (City city : cities) {
-            if (!uniqueCities.contains(city)) {
-                cityRepository.delete(city);
+        for (Area area : areas) {
+            if (!uniqueCities.contains(area)) {
+                areaRepository.delete(area);
             }
         }
     }

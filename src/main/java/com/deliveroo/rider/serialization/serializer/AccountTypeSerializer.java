@@ -10,6 +10,6 @@ import java.io.IOException;
 public class AccountTypeSerializer extends JsonSerializer<AccountType> {
     @Override
     public void serialize(AccountType accountType, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeString(accountType.getValue());
+        jsonGenerator.writeString(accountType.getDescription());
     }
 }
