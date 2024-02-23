@@ -72,4 +72,17 @@ public class Order {
                 .get()
                 .getComplete();
     }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "id=" + id +
+                ", fee=" + fee +
+                ", extra=" + extra +
+                ", tip=" + tip +
+                ", place='" + place + '\'' +
+                ", shop='" + shop + '\'' +
+                ", orderDetails=" + orderDetails +
+                '}';
+    }
 }

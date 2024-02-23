@@ -1,4 +1,4 @@
-package com.deliveroo.rider.configuration;
+package com.deliveroo.rider.scheduled;
 
 import com.deliveroo.rider.entity.Area;
 import com.deliveroo.rider.repository.AreaRepository;
@@ -15,7 +15,7 @@ public class RedundantDataCleanupTask {
     private AreaRepository areaRepository;
 
 //    @Scheduled(cron = "0 */1 * * * *") // Run every 1 minutes
-//    @Scheduled(cron = "0 0 0 * * *") // Scheduled to run daily at midnight
+    @Scheduled(cron = "0 0 0 * * *") // Scheduled to run daily at midnight
     public void removeRedundantData() {
         List<Area> areas = areaRepository.findAll();
         List<Area> uniqueCities = areas.stream()

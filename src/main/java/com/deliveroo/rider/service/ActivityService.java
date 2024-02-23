@@ -46,10 +46,10 @@ public class ActivityService {
     private JwtTokenProvider tokenProvider;
 
     /**
-     * the default working type is normal, default months is 6 months
-     * Busy working type work 7 days per week,                              15 orders in average per day,
-     * normal working type work from monday to Saturday, be off on Sundays, 10 orders in average per day,
-     * easy working type, work from monday to Friday, be off at weekends, 5 orders in average per day,
+     * the default working type is normal, default months is 12 months
+     * Busy working type work 7 days per week,                              12 orders in average per day,
+     * normal working type work from monday to Saturday, be off on Sundays, 8 orders in average per day,
+     * easy working type, work from monday to Friday, be off at weekends, 4 orders in average per day,
      *
      */
     public List<Activity> generateMockedActivities(Account account, Integer months) {
@@ -171,16 +171,19 @@ public class ActivityService {
         WorkingType workingType = account.getWorkingType();
         switch (workingType) {
             case BUSY:
-                activity.setOrders(randomOrders(15, dayOfWeek, activity));
+                activity.setOrders(randomOrders(generateRandomNumber(10,15), dayOfWeek, activity));
+                break;
             case NORMAL:
-                activity.setOrders(randomOrders(10, dayOfWeek, activity));
+                activity.setOrders(randomOrders(generateRandomNumber(5,10), dayOfWeek, activity));
+                break;
             case EASY:
-                activity.setOrders(randomOrders(5, dayOfWeek, activity));
+                activity.setOrders(randomOrders(generateRandomNumber(2,5), dayOfWeek, activity));
+                break;
         }
         return activity;
     }
 
-    private List<Order> randomOrders(int maxOrders, DayOfWeek dayOfWeek, Activity activity) {
+    public List<Order> randomOrders(int maxOrders, DayOfWeek dayOfWeek, Activity activity) {
         List<Order> orders = new ArrayList<>();
         for (int i = 1; i <= maxOrders; i++) {
             orders.add(randomOrder(dayOfWeek,activity));

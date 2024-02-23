@@ -29,4 +29,14 @@ public class OrderDetail {
     @JoinColumn(name = "order_id")
     @JsonIgnore
     private Order order;
+
+    @Override
+    public String toString() {
+        return "OrderDetail{" +
+                "id=" + id +
+                ", orderNo='" + orderNo + '\'' +
+                ", start=" + start +
+                ", complete=" + complete +
+                '}';
+    }
 }

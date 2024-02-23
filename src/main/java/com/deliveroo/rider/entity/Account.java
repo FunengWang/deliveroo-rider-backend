@@ -19,6 +19,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 
 import javax.persistence.*;
+import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -85,8 +86,8 @@ public class Account implements Serializable {
 
     @Column(length = 10)
     @JsonSerialize(using = CountrySerializer.class)
-    @ApiModelProperty(notes = "default country is Ireland",example = "Ireland")
-    private Country country = Country.IRELAND;
+    @NotNull(message = "country is required!")
+    private Country country;
 
     @Column(length = 10)
     @JsonSerialize(using = WorkingTypeSerializer.class)
@@ -111,6 +112,19 @@ public class Account implements Serializable {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime expirationDate;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "contact_id")
+    @NotNull(message = "contact is required!")
+    @Valid
+    private Contact contact;
+
+    @JsonIgnore
+    private boolean mocked;
+
+    @JsonIgnore
+    @NotNull(message = "newCreated is required!")
+    private boolean newCreated;
+
     public void compareAndFillFields(Account other) {
         Class<? extends Account> clazz = getClass();
         Field[] fields = clazz.getDeclaredFields();
@@ -127,5 +141,33 @@ public class Account implements Serializable {
                 e.printStackTrace();
             }
         }
+    }
+
+    @JsonIgnore
+    public boolean notExpired(){
+       return this.expirationDate !=null && this.expirationDate.isAfter(LocalDateTime.now());
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", phone='" + phone + '\'' +
+                ", callingCode=" + callingCode +
+                ", email='" + email + '\'' +
+                ", accountType=" + accountType +
+                ", securityCode='" + securityCode + '\'' +
+                ", areaName='" + areaName + '\'' +
+                ", country=" + country +
+                ", workingType=" + workingType +
+                ", riderId='" + riderId + '\'' +
+                ", activities=" + activities +
+                ", expirationDate=" + expirationDate +
+                ", contact=" + contact +
+                ", mocked=" + mocked +
+                ", newCreated=" + newCreated +
+                '}';
     }
 }

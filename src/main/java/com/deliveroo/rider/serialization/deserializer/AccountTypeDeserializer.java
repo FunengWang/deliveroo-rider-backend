@@ -15,8 +15,10 @@ public class AccountTypeDeserializer extends JsonDeserializer<AccountType> {
         for(AccountType type: AccountType.values()){
             if(text.equalsIgnoreCase(type.name())){
                 return type;
-            }else if(text.equalsIgnoreCase("e-bike")){
-                return AccountType.E_BIKE;
+            }else if(text.equalsIgnoreCase(type.getValue())){
+                return type;
+            }else if(text.equalsIgnoreCase(type.getDescription())){
+                return type;
             }
         }
         return null;

@@ -1,7 +1,6 @@
 package com.deliveroo.rider.controller;
 
 import com.deliveroo.rider.entity.Account;
-import com.deliveroo.rider.entity.Activity;
 import com.deliveroo.rider.entity.Area;
 import com.deliveroo.rider.pojo.dto.AccountInfo;
 import com.deliveroo.rider.pojo.dto.CommonResult;
@@ -46,8 +45,6 @@ public class AccountController {
         } else {
             account.setSecurityCode(passwordEncoder.encode(account.getSecurityCode()));
             try {
-                List<Activity> activities = activityService.generateMockedActivities(account, 6);
-                account.setActivities(activities);
                 repository.save(account);
                 return new CommonResult().generateOK("New account created.",null);
             }catch (Exception e){
@@ -78,6 +75,8 @@ public class AccountController {
         accountInfo.setPhone(account.getPhone());
         accountInfo.setRiderId(account.getRiderId());
         accountInfo.setAccountType(account.getAccountType());
+        accountInfo.setCountry(account.getCountry());
+        accountInfo.setContact(account.getContact());
         List<Area> areas = areaRepository.findByAreaNameContainingIgnoreCase(account.getAreaName());
         Optional<Area> first = areas.stream().findFirst();
         if(first.isPresent()){
