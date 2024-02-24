@@ -59,8 +59,7 @@ public class Account implements Serializable {
 
     @Column(length = 5)
     @JsonSerialize(using = CallingCodeSerializer.class)
-    @ApiModelProperty(example = "+353",notes = "default is +353(Ireland calling code)")
-    private CallingCode callingCode = CallingCode.IRELAND;
+    private CallingCode callingCode;
 
     @Column(nullable = false, length = 30, unique = true)
     @ApiModelProperty(required = true,example = "joe.biden@gmail.com")
@@ -124,6 +123,14 @@ public class Account implements Serializable {
     @JsonIgnore
     @NotNull(message = "newCreated is required!")
     private boolean newCreated;
+
+    public CallingCode getCallingCode() {
+        if(this.country == Country.UK){
+            return CallingCode.UK;
+        } else {
+            return  CallingCode.IRELAND;
+        }
+    }
 
     public void compareAndFillFields(Account other) {
         Class<? extends Account> clazz = getClass();
