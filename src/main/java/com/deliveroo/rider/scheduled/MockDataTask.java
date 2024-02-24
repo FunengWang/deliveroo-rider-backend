@@ -37,7 +37,7 @@ public class MockDataTask {
         Iterator<Account> iterator = accountRepository.findAll().iterator();
         while(iterator.hasNext()) {
             Account account = iterator.next();
-            if(account.notExpired() && !account.isNewCreated() && !account.isMocked()){
+            if(account.notExpired() &&  Boolean.FALSE.equals(account.getNewCreated()) && !account.isMocked()){
                 //未过期，不是新创建出来的账号，且未生成过数据 默认生成之前12个月的送单记录
                 List<Activity> activities = activityService.generateMockedActivities(account, 12);
                 account.setActivities(activities);
@@ -57,7 +57,7 @@ public class MockDataTask {
         Iterator<Account> iterator = accountRepository.findAll().iterator();
         while(iterator.hasNext()) {
             Account account = iterator.next();
-            if(account.notExpired() && !account.isNewCreated() ) {
+            if(account.notExpired() && Boolean.FALSE.equals(account.getNewCreated()) ) {
                 Calendar calendar = Calendar.getInstance();
                 calendar.add(Calendar.DAY_OF_MONTH, -1);
                 WorkingType workingType = account.getWorkingType();

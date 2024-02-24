@@ -12,6 +12,7 @@ import com.deliveroo.rider.validation.PhoneNumber;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
@@ -120,9 +121,10 @@ public class Account implements Serializable {
     @JsonIgnore
     private boolean mocked;
 
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotNull(message = "newCreated is required!")
-    private boolean newCreated;
+    //only support deserialization, no support serialization
+    private Boolean newCreated;
 
     public CallingCode getCallingCode() {
         if(this.country == Country.UK){
